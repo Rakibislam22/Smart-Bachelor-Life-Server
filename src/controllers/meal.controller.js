@@ -7,7 +7,6 @@ const { logger, getLogContext, getErrorMeta } = require("../utils/logger.util");
 exports.createMeal = async (req, res) => {
 	const logCtx = getLogContext(req);
 	const { groupID, mealCount, date } = req.body;
-	const parsedMealCount = Number(mealCount);
 
 	logger.info("Create meal attempt", {
 		...logCtx,
@@ -33,10 +32,25 @@ exports.createMeal = async (req, res) => {
 			});
 		}
 
-		if (!Number.isFinite(parsedMealCount) || parsedMealCount < 0) {
+		// Validate mealCount is an array with exactly 3 values
+		if (!Array.isArray(mealCount)) {
 			return res.status(400).json({
 				success: false,
-				message: "mealCount must be a non-negative number",
+				message: "mealCount must be an array",
+			});
+		}
+
+		if (mealCount.length !== 3) {
+			return res.status(400).json({
+				success: false,
+				message: "mealCount must contain exactly 3 values",
+			});
+		}
+
+		if (!mealCount.every((val) => typeof val === "number" && val >= 0)) {
+			return res.status(400).json({
+				success: false,
+				message: "All mealCount values must be non-negative numbers",
 			});
 		}
 
@@ -56,7 +70,7 @@ exports.createMeal = async (req, res) => {
 			userID: user._id,
 			groupID: group._id,
 			date,
-			mealCount: parsedMealCount,
+			mealCount,
 		});
 
 		res.status(201).json({ success: true, data: meal });
@@ -148,11 +162,29 @@ exports.updateMeal = async (req, res) => {
 	try {
 		//  OPTIONAL VALIDATION
 		if (req.body.mealCount !== undefined) {
-			const parsedMealCount = Number(req.body.mealCount);
-			if (!Number.isFinite(parsedMealCount) || parsedMealCount < 0) {
+			if (!Array.isArray(req.body.mealCount)) {
 				return res.status(400).json({
 					success: false,
-					message: "mealCount must be a non-negative number",
+					message: "mealCount must be an array",
+				});
+			}
+
+			if (req.body.mealCount.length !== 3) {
+				return res.status(400).json({
+					success: false,
+					message: "mealCount must contain exactly 3 values",
+				});
+			}
+
+			if (
+				!req.body.mealCount.every(
+					(val) => typeof val === "number" && val >= 0,
+				)
+			) {
+				return res.status(400).json({
+					success: false,
+					message:
+						"All mealCount values must be non-negative numbers",
 				});
 			}
 		}

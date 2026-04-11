@@ -17,6 +17,8 @@ const groupSchema = new mongoose.Schema(
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "user",
 			required: [true, "managerID is required for creating a group"],
+			unique: [true, "A user can only manage one group"],
+			index: true,
 		},
 		userIDs: {
 			type: [mongoose.Schema.Types.ObjectId],

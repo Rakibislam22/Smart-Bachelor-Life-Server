@@ -128,7 +128,7 @@ async function createPayment(req, res) {
 		amount === undefined ||
 		amount === null ||
 		Number.isNaN(parsedAmount) ||
-		parsedAmount < 0 ||
+		parsedAmount < 0.01 ||
 		!normalizedPaymentMethod ||
 		(!isStripePayment &&
 			(!normalizedTransactionID ||
@@ -143,10 +143,10 @@ async function createPayment(req, res) {
 		});
 
 		const requirementMessage = isStripePayment
-			? "amount and paymentMethod are required"
+			? "amount and paymentMethod are required. Amount must be at least 0.01"
 			: isSenderNumberRequired
-				? "amount, paymentMethod, senderNumber and transactionID are required"
-				: "amount, paymentMethod and transactionID are required";
+				? "amount, paymentMethod, senderNumber and transactionID are required. Amount must be at least 0.01"
+				: "amount, paymentMethod and transactionID are required. Amount must be at least 0.01";
 
 		return res.status(400).json({
 			success: false,
@@ -490,6 +490,20 @@ async function confirmPayment(req, res) {
 			});
 		}
 
+		if (payment.status !== "PENDING") {
+			logger.warn("Confirm payment failed: invalid state transition", {
+				...logCtx,
+				paymentID,
+				currentStatus: payment.status,
+				attemptedStatus: "COMPLETED",
+			});
+
+			return res.status(400).json({
+				success: false,
+				message: `Cannot confirm payment with status ${payment.status}. Only PENDING payments can be confirmed.`,
+			});
+		}
+
 		payment.status = "COMPLETED";
 		await payment.save();
 
@@ -586,6 +600,20 @@ async function rejectPayment(req, res) {
 			return res.status(403).json({
 				success: false,
 				message: "User is not authorized to reject this payment",
+			});
+		}
+
+		if (payment.status !== "PENDING") {
+			logger.warn("Reject payment failed: invalid state transition", {
+				...logCtx,
+				paymentID,
+				currentStatus: payment.status,
+				attemptedStatus: "FAILED",
+			});
+
+			return res.status(400).json({
+				success: false,
+				message: `Cannot reject payment with status ${payment.status}. Only PENDING payments can be rejected.`,
 			});
 		}
 

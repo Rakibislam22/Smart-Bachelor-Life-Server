@@ -328,7 +328,13 @@ const options = {
 					properties: {
 						groupID: { type: "string" },
 						date: { type: "string", format: "date-time" },
-						mealCount: { type: "number", minimum: 0 },
+						mealCount: {
+							type: "array",
+							items: { type: "number", minimum: 0 },
+							example: [1, 2, 1],
+							minItems: 3,
+							maxItems: 3,
+						},
 					},
 					required: ["groupID", "mealCount"],
 				},
@@ -336,7 +342,13 @@ const options = {
 					type: "object",
 					properties: {
 						date: { type: "string", format: "date-time" },
-						mealCount: { type: "number", minimum: 0 },
+						mealCount: {
+							type: "array",
+							items: { type: "number", minimum: 0 },
+							example: [1, 2, 1],
+							minItems: 3,
+							maxItems: 3,
+						},
 					},
 				},
 				Menu: {
