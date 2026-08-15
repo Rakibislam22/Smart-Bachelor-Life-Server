@@ -1,7 +1,31 @@
 const Menu = require("../models/menu.model");
 const User = require("../models/user.model");
 const groupModel = require("../models/group.model");
+const {
+	getMealSummaryForGroup,
+	syncMealToFirebase,
+} = require("../services/rtdbMealSync.service");
 const { logger, getLogContext, getErrorMeta } = require("../utils/logger.util");
+
+async function syncDeviceMealForGroup(groupId) {
+	if (!groupId || !process.env.DEVICE_GROUP_ID) {
+		return;
+	}
+
+	if (String(groupId) !== String(process.env.DEVICE_GROUP_ID)) {
+		return;
+	}
+
+	try {
+		const summary = await getMealSummaryForGroup(groupId);
+		await syncMealToFirebase(summary);
+	} catch (error) {
+		logger.error("Menu-triggered meal RTDB sync failed", {
+			error: getErrorMeta(error),
+			groupId,
+		});
+	}
+}
 
 //  CREATE MENU
 exports.createMenu = async (req, res) => {
@@ -51,6 +75,9 @@ exports.createMenu = async (req, res) => {
 			lunch,
 			dinner,
 		});
+
+		// Keep RTDB writes scoped to the single ESP32 apartment group only.
+		void syncDeviceMealForGroup(group._id);
 
 		logger.info("Menu created", {
 			...logCtx,
@@ -197,6 +224,9 @@ exports.updateMenu = async (req, res) => {
 			},
 		);
 
+		// Keep RTDB writes scoped to the single ESP32 apartment group only.
+		void syncDeviceMealForGroup(menu.groupID);
+
 		logger.info("Menu updated", { ...logCtx, menuId: updatedMenu._id });
 
 		return res.status(200).json({
@@ -249,6 +279,9 @@ exports.deleteMenu = async (req, res) => {
 		}
 
 		await Menu.findByIdAndDelete(req.params.id);
+
+		// Keep RTDB writes scoped to the single ESP32 apartment group only.
+		void syncDeviceMealForGroup(menu.groupID);
 
 		logger.info("Menu deleted", { ...logCtx, menuId: menu._id });
 

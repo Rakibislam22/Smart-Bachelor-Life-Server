@@ -1,7 +1,31 @@
 const Meal = require("../models/meal.model");
 const User = require("../models/user.model");
 const groupModel = require("../models/group.model");
+const {
+	getMealSummaryForGroup,
+	syncMealToFirebase,
+} = require("../services/rtdbMealSync.service");
 const { logger, getLogContext, getErrorMeta } = require("../utils/logger.util");
+
+async function syncDeviceMealForGroup(groupId) {
+	if (!groupId || !process.env.DEVICE_GROUP_ID) {
+		return;
+	}
+
+	if (String(groupId) !== String(process.env.DEVICE_GROUP_ID)) {
+		return;
+	}
+
+	try {
+		const summary = await getMealSummaryForGroup(groupId);
+		await syncMealToFirebase(summary);
+	} catch (error) {
+		logger.error("Meal RTDB sync failed", {
+			error: getErrorMeta(error),
+			groupId,
+		});
+	}
+}
 
 //  CREATE MEAL
 exports.createMeal = async (req, res) => {
@@ -72,6 +96,9 @@ exports.createMeal = async (req, res) => {
 			date,
 			mealCount,
 		});
+
+		// Keep RTDB writes scoped to the single ESP32 apartment group only.
+		void syncDeviceMealForGroup(group._id);
 
 		res.status(201).json({ success: true, data: meal });
 	} catch (error) {
@@ -232,7 +259,7 @@ exports.updateMeal = async (req, res) => {
 
 		const updates = {};
 		if (req.body.mealCount !== undefined) {
-			updates.mealCount = Number(req.body.mealCount);
+			updates.mealCount = req.body.mealCount;
 		}
 		if (req.body.date !== undefined) {
 			updates.date = req.body.date;
@@ -252,6 +279,9 @@ exports.updateMeal = async (req, res) => {
 				new: true,
 			},
 		);
+
+		// Keep RTDB writes scoped to the single ESP32 apartment group only.
+		void syncDeviceMealForGroup(meal.groupID);
 
 		res.status(200).json({
 			success: true,
@@ -307,6 +337,8 @@ exports.deleteMeal = async (req, res) => {
 		}
 
 		await Meal.findByIdAndDelete(req.params.id);
+		// Keep RTDB writes scoped to the single ESP32 apartment group only.
+		void syncDeviceMealForGroup(meal.groupID);
 
 		res.status(200).json({
 			success: true,
