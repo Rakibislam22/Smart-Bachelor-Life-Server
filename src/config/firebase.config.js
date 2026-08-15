@@ -12,6 +12,7 @@ try {
 			clientEmail: envConfig.FIREBASE_CLIENT_EMAIL,
 			privateKey: envConfig.FIREBASE_PRIVATE_KEY,
 		}),
+		databaseURL: envConfig.FIREBASE_DATABASE_URL,
 	});
 	logger.info("✔️  Firebase Admin SDK initialized successfully");
 } catch (err) {
