@@ -36,6 +36,7 @@ const mealRouter = require("./routes/meal.route");
 const menuRouter = require("./routes/menu.route");
 const bazarRouter = require("./routes/bazar.route");
 const chatRouter = require("./routes/chat.route");
+const notificationRouter = require("./routes/notification.routes");
 
 // Create an Express application
 const app = express();
@@ -121,6 +122,7 @@ app.use("/api/meals", mealRouter);
 app.use("/api/menus", menuRouter);
 app.use("/api/bazar", bazarRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/notifications", notificationRouter);
 
 // 404 handler for unmatched routes
 app.use((req, res) => {

@@ -6,6 +6,9 @@ const { logger } = require("./src/utils/logger.util");
 const connectDB = require("./src/config/mongoDB.config");
 const { connectRedis } = require("./src/config/redis.config");
 
+const { startWarningListener } = require("./src/services/rtdbWarningListener");
+const { startKitchenListener } = require("./src/services/Rtdbkitchenlistener");
+
 const PORT = envConfig.PORT || 3000;
 const HEALTH_PING_INTERVAL_MS = envConfig.HEALTH_PING_INTERVAL_MS;
 
@@ -47,6 +50,8 @@ function startHealthPingScheduler() {
 async function startServer() {
 	try {
 		await Promise.all([connectDB(), connectRedis()]);
+		startWarningListener();
+		startKitchenListener();
 
 		app.listen(PORT, () => {
 			logger.info(
