@@ -53,6 +53,12 @@ if (!process.env.FIREBASE_PRIVATE_KEY) {
 	);
 }
 
+if (!process.env.FIREBASE_DATABASE_URL) {
+	throw new Error(
+		"FIREBASE_DATABASE_URL is not defined in the environment variables",
+	);
+}
+
 if (!process.env.IMAGEKIT_PRIVATE_KEY) {
 	throw new Error(
 		"IMAGEKIT_PRIVATE_KEY is not defined in the environment variables",
@@ -120,6 +126,7 @@ const envConfig = {
 		/\\n/g,
 		"\n",
 	),
+	FIREBASE_DATABASE_URL: process.env.FIREBASE_DATABASE_URL,
 	IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
 	IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
 	IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT,
