@@ -68,6 +68,18 @@ const userSchema = new mongoose.Schema(
 			type: Date,
 			default: null,
 		},
+		fcmTokens: {
+			type: [String],
+			default: [],
+			validate: {
+				validator: function (tokens) {
+					return Array.isArray(tokens)
+						? tokens.every((token) => typeof token === "string" && token.trim().length > 0)
+						: true;
+				},
+				message: "FCM tokens must be strings",
+			},
+		},
 	},
 	{
 		timestamps: true,
@@ -75,6 +87,17 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ firebaseUid: 1, email: 1 });
+
+userSchema.pre("save", function () {
+	if (Array.isArray(this.fcmTokens)) {
+		this.fcmTokens = [...new Set(
+			this.fcmTokens
+				.filter((token) => typeof token === "string")
+				.map((token) => token.trim())
+				.filter(Boolean),
+		)];
+	}
+});
 
 const userModel = mongoose.model("user", userSchema);
 
